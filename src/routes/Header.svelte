@@ -4,7 +4,7 @@
   export let user;
 </script>
 
-<header class="w-full border-b border-gray-200 bg-white">
+<header class="sticky top-0 w-full border-b border-gray-200 bg-white z-100">
   <div
     class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4"
   >

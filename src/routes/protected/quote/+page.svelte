@@ -6,7 +6,7 @@
   // =======================
   // STEP STATE
   // =======================
-  let step = 1;
+  let step = 2;
   let clientId = null;
 
   // =======================
@@ -530,7 +530,7 @@
     LIVE QUOTE SIDEBAR
   ======================== -->
   {#if step === 2}
-    <aside class="w-80 sticky top-4 h-fit bg-gray-50 rounded-lg p-6 space-y-4">
+    <aside class="w-80 sticky top-20 h-fit bg-gray-50 rounded-lg p-6 space-y-4">
       <h2 class="text-2xl font-bold mb-4">Cleaning Plan</h2>
 
       <div class="space-y-2">
