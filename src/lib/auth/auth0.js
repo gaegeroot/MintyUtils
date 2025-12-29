@@ -8,42 +8,43 @@ import {
 } from "$env/static/private";
 import { PUBLIC_BASE_URL } from "$env/static/public";
 import jwt from "jsonwebtoken";
-import { JwksClient } from "jwks-rsa";
+import * as jose from 'jose';
 
 let cachedKey = undefined;
 
 const COOKIE_DURATION_SECONDS = 60 * 60 * 24 * 7; // 1 week
 
-function getKey(header, callback) {
-    const client = new JwksClient({ jwksUri: JWKS_URL });
+// function getKey(header, callback) {
+//     const client = new JwksClient({ jwksUri: JWKS_URL });
 
-    client.getSigningKey(header.kid, (err, key) => {
-        if (err) {
-            callback(err);
-            return;
-        }
+//     client.getSigningKey(header.kid, (err, key) => {
+//         if (err) {
+//             callback(err);
+//             return;
+//         }
 
-        if (cachedKey) {
-            callback(null, cachedKey);
-            return;
-        }
+//         if (cachedKey) {
+//             callback(null, cachedKey);
+//             return;
+//         }
 
-        const signingKey = key?.getPublicKey();
-        cachedKey = signingKey;
-        callback(null, signingKey);
+//         const signingKey = key?.getPublicKey();
+//         cachedKey = signingKey;
+//         callback(null, signingKey);
+//     });
+// }
+
+export async function verifyToken(token) {
+    const JWKS = jose.createRemoteJWKSet(
+        new URL(`https://${AUTH0_DOMAIN}/.well-known/jwks.json`)
+    );
+
+    const { payload } = await jose.jwtVerify(token, JWKS, {
+        issuer: `https://${AUTH0_DOMAIN}/`,
+        audience: AUTH0_CLIENT_ID,
     });
-}
 
-export function verifyToken(token) {
-    return new Promise((resolve, reject) => {
-        jwt.verify(token, getKey, {}, (err, payload) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(payload);
-            }
-        });
-    });
+    return payload;
 }
 
 export async function getToken({ code }) {
