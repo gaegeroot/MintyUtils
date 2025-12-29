@@ -1,11 +1,12 @@
 <script>
   import { enhance } from '$app/forms';
   import { PRICING, calculateQuote } from '$lib/pricing';
+  import { onMount } from 'svelte';
 
   // =======================
   // STEP STATE
   // =======================
-  let step = 2;
+  let step = 1;
   let clientId = null;
 
   // =======================
@@ -66,6 +67,17 @@
     Monthly: 4524266,
   };
 
+  let addressInputEl;
+  let suggestions = [];
+  let sessionToken;
+
+  let address = {
+    streetAddress: '',
+    city: '',
+    state: '',
+    zipcode: '',
+  };
+
   // =======================
   // HANDLERS
   // =======================
@@ -78,6 +90,60 @@
     };
   }
 
+  async function initAutocomplete() {
+    sessionToken = new google.maps.places.AutocompleteSessionToken();
+  }
+
+  async function onAddressInput(e) {
+    const input = e.target.value;
+    address.streetAddress = input;
+
+    if (!input || input.length < 3) {
+      suggestions = [];
+      return;
+    }
+
+    const request = {
+      input,
+      sessionToken,
+      // Optional bias (remove if you want worldwide)
+      locationBias: {
+        west: -125,
+        east: -113,
+        north: 49,
+        south: 32,
+      },
+    };
+
+    const { suggestions: results } =
+      await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+        request,
+      );
+
+    suggestions = results;
+  }
+
+  async function selectSuggestion(prediction) {
+    const place = prediction.placePrediction.toPlace();
+
+    await place.fetchFields({
+      fields: ['addressComponents', 'formattedAddress'],
+    });
+
+    address.streetAddress = place.formattedAddress;
+    suggestions = [];
+
+    for (const c of place.addressComponents) {
+      if (c.types.includes('locality')) address.city = c.longText;
+      if (c.types.includes('administrative_area_level_1'))
+        address.state = c.shortText;
+      if (c.types.includes('postal_code')) address.zipcode = c.longText;
+    }
+
+    // New token after selection
+    sessionToken = new google.maps.places.AutocompleteSessionToken();
+  }
+
   const bedroomLabel = (v) => `${v} Bedroom${v === 1 ? '' : 's'}`;
   const bathroomLabel = (v) => `${v} Bathroom${v <= 1 ? '' : 's'}`;
 
@@ -86,11 +152,21 @@
 
   $: quote = calculateQuote({ property, addOns, conditions, schedule });
   const scheduleOptions = Object.keys(PRICING.scheduleDiscounts);
+
+  onMount(() => {
+    if (window.google?.maps?.places) {
+      initAutocomplete();
+    }
+  });
 </script>
 
 <svelte:head>
   <title>Internal Quote Calculator</title>
   <meta name="description" content="Generate cleaning estimates" />
+  <script
+    async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBja16ZB97PBDnQ8yfAkdsQa5KeTMc5LKQ&libraries=places&v=beta"
+  ></script>
 </svelte:head>
 
 <div class="flex gap-8 max-w-7xl mx-auto">
@@ -182,32 +258,57 @@
         <input type="hidden" name="clientId" value={clientId} />
 
         <!-- Service Address -->
-        <section class="space-y-4">
+        <section class="space-y-4 relative">
           <h3 class="text-xl font-semibold">Service Address</h3>
+
           <input
+            bind:this={addressInputEl}
+            value={address.streetAddress}
             name="streetAddress"
-            placeholder="Address Line 1"
+            placeholder="Start typing address..."
             required
             class="w-full rounded-md border px-3 py-2"
+            on:input={onAddressInput}
+            autocomplete="off"
           />
+
+          {#if suggestions.length}
+            <ul
+              class="absolute z-50 bg-white border rounded-md w-full shadow mt-1 max-h-60 overflow-auto"
+            >
+              {#each suggestions as s}
+                <li
+                  class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                  on:click={() => selectSuggestion(s)}
+                >
+                  {s.placePrediction.text.text}
+                </li>
+              {/each}
+            </ul>
+          {/if}
+
           <input
             name="address2"
             placeholder="Address Line 2 (optional)"
             class="w-full rounded-md border px-3 py-2"
           />
+
           <div class="grid md:grid-cols-3 gap-4">
             <input
               name="city"
+              bind:value={address.city}
               placeholder="City"
               class="rounded-md border px-3 py-2"
             />
             <input
               name="state"
+              bind:value={address.state}
               placeholder="State"
               class="rounded-md border px-3 py-2"
             />
             <input
               name="zipcode"
+              bind:value={address.zipcode}
               placeholder="ZIP Code"
               class="rounded-md border px-3 py-2"
             />
