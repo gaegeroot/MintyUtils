@@ -14,26 +14,6 @@ let cachedKey = undefined;
 
 const COOKIE_DURATION_SECONDS = 60 * 60 * 24 * 7; // 1 week
 
-// function getKey(header, callback) {
-//     const client = new JwksClient({ jwksUri: JWKS_URL });
-
-//     client.getSigningKey(header.kid, (err, key) => {
-//         if (err) {
-//             callback(err);
-//             return;
-//         }
-
-//         if (cachedKey) {
-//             callback(null, cachedKey);
-//             return;
-//         }
-
-//         const signingKey = key?.getPublicKey();
-//         cachedKey = signingKey;
-//         callback(null, signingKey);
-//     });
-// }
-
 export async function verifyToken(token) {
     const JWKS = jose.createRemoteJWKSet(
         new URL(`https://${AUTH0_DOMAIN}/.well-known/jwks.json`)
