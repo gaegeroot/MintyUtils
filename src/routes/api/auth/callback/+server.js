@@ -1,8 +1,6 @@
 import { getToken, setAuthCookie, verifyToken } from "$lib/auth/auth0";
-import type { User } from "$lib/types/user";
-import type { RequestHandler } from "@sveltejs/kit";
 
-export const GET: RequestHandler = async ({ url, cookies }) => {
+export const GET = async ({ url, cookies }) => {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   let returnUrl = url.searchParams.get("returnUrl") || "/";
@@ -18,15 +16,23 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
   }
 
   try {
-    console.log("code", code);
-
     const token = await getToken({ code });
-    console.log("token", token);
+    const authUser = await verifyToken(token.id_token);
 
-    const authUser = (await verifyToken(token.id_token)) as User;
-    console.log("authUser", authUser);
+    const NAMESPACE = "https://admin.callminty.com";
 
-    setAuthCookie(cookies, authUser);
+    // Create a normalized sessionUser object
+    const sessionUser = {
+      sub: authUser.sub,
+      email: authUser.email,
+      roles: authUser[`${NAMESPACE}/roles`] || [], // extract roles
+      nickname: authUser.nickname,
+      name: authUser.name,
+      picture: authUser.picture,
+    };
+
+    // Store sessionUser in cookie
+    setAuthCookie(cookies, sessionUser);
     cookies.delete("csrfState", { path: "/" });
 
     return new Response(null, {

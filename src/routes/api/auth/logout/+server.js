@@ -4,9 +4,8 @@ import {
   COOKIE_NAME,
 } from "$env/static/private";
 import { PUBLIC_BASE_URL } from "$env/static/public";
-import type { RequestHandler } from "@sveltejs/kit";
 
-export const GET: RequestHandler = ({ cookies, url }) => {
+export const GET = ({ cookies, url }) => {
   // we need to remove the loggedIN cookie
   cookies.delete(COOKIE_NAME, { path: "/" });
 

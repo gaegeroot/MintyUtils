@@ -1,8 +1,7 @@
 import { AUTH0_CLIENT_ID, AUTH0_DOMAIN } from "$env/static/private";
 import { PUBLIC_BASE_URL } from "$env/static/public";
-import type { RequestHandler } from "@sveltejs/kit";
 
-export const GET: RequestHandler = ({ cookies, url }) => {
+export const GET = ({ cookies, url }) => {
   const csrfState = Math.random().toString(36).substring(7);
   cookies.set("csrfState", csrfState, {
     httpOnly: true,
