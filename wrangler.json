@@ -3,12 +3,6 @@
   "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2025-08-10",
   "compatibility_flags": ["nodejs_compat"],
-  "routes": [
-    {
-      "pattern": "admin.callminty.com",
-      "custom_domain": true
-    }
-  ],
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"
