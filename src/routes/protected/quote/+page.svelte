@@ -1,17 +1,21 @@
 <script>
   import { enhance } from '$app/forms';
   import { PRICING, calculateQuote } from '$lib/pricing';
-  import { onMount } from 'svelte';
 
   // =======================
   // STEP STATE
   // =======================
-  let step = 2;
+  let step = 1;
   let clientId = null;
 
-  // =======================
-  // DOMAIN STATE
-  // =======================
+  let customer = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    smsConsent: false,
+  };
+
   let property = {
     bedrooms: 1,
     bathrooms: 1,
@@ -19,6 +23,9 @@
     type: 4523726,
     accessDifficulty: '4814194',
   };
+
+  let selectedDate = '';
+  let selectedTime = '';
 
   let addOns = {
     firstTimeClean: false,
@@ -90,10 +97,6 @@
     };
   }
 
-  async function initAutocomplete() {
-    sessionToken = new google.maps.places.AutocompleteSessionToken();
-  }
-
   async function onAddressInput(e) {
     const input = e.target.value;
     address.streetAddress = input;
@@ -103,10 +106,14 @@
       return;
     }
 
+    // ✅ CREATE TOKEN HERE
+    if (!sessionToken) {
+      sessionToken = new google.maps.places.AutocompleteSessionToken();
+    }
+
     const request = {
       input,
       sessionToken,
-      // Optional bias (remove if you want worldwide)
       locationBias: {
         west: -125,
         east: -113,
@@ -140,8 +147,8 @@
       if (c.types.includes('postal_code')) address.zipcode = c.longText;
     }
 
-    // New token after selection
-    sessionToken = new google.maps.places.AutocompleteSessionToken();
+    // ✅ END SESSION COMPLETELY
+    sessionToken = null;
   }
 
   const bedroomLabel = (v) => `${v} Bedroom${v === 1 ? '' : 's'}`;
@@ -152,12 +159,6 @@
 
   $: quote = calculateQuote({ property, addOns, conditions, schedule });
   const scheduleOptions = Object.keys(PRICING.scheduleDiscounts);
-
-  onMount(() => {
-    if (window.google?.maps?.places) {
-      initAutocomplete();
-    }
-  });
 </script>
 
 <svelte:head>
@@ -170,92 +171,104 @@
 </svelte:head>
 
 <div class="flex gap-8 max-w-7xl mx-auto">
-  <div class="flex-1">
-    <!-- =======================
+  <!-- =======================
       STEP 1: CLIENT INFO
     ======================== -->
-    {#if step === 1}
-      <form
-        method="POST"
-        action="?/createClient"
-        use:enhance={handleClientResult}
-        class="max-w-xl mx-auto space-y-6"
-      >
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium"
-              >First Name <span class="text-red-500">*</span></label
-            >
-            <input
-              name="firstName"
-              required
-              placeholder="Enter your first name"
-              class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium"
-              >Last Name <span class="text-red-500">*</span></label
-            >
-            <input
-              name="lastName"
-              required
-              placeholder="Enter your last name"
-              class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
-            />
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium"
-              >Email <span class="text-red-500">*</span></label
-            >
-            <input
-              type="email"
-              name="email"
-              required
-              placeholder="Enter your email"
-              class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Phone Number</label>
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Enter your phone number"
-              class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
-            />
-          </div>
-        </div>
-
-        <label class="flex items-center gap-2 text-sm">
+  {#if step === 1}
+    <form
+      method="POST"
+      action="?/createClient"
+      use:enhance={handleClientResult}
+      class="max-w-xl mx-auto space-y-6"
+    >
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium"
+            >First Name <span class="text-red-500">*</span></label
+          >
           <input
-            type="checkbox"
-            name="smsConsent"
-            class="rounded border-gray-300"
+            bind:value={customer.firstName}
+            name="firstName"
+            required
+            placeholder="Enter your first name"
+            class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
           />
-          Ok to receive SMS related to service
-          <span class="text-red-500">*</span>
-        </label>
+        </div>
+        <div>
+          <label class="block text-sm font-medium"
+            >Last Name <span class="text-red-500">*</span></label
+          >
+          <input
+            bind:value={customer.lastName}
+            name="lastName"
+            required
+            placeholder="Enter your last name"
+            class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
+          />
+        </div>
+      </div>
 
-        <button
-          class="cursor-pointer rounded-md bg-black px-6 py-3 text-white text-sm font-medium hover:bg-gray-800 transition"
-        >
-          Continue →
-        </button>
-      </form>
-    {:else if step === 2}
-      <!-- =======================
-        STEP 2: PROPERTY & QUOTE
-      ======================== -->
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium"
+            >Email <span class="text-red-500">*</span></label
+          >
+          <input
+            bind:value={customer.email}
+            type="email"
+            name="email"
+            required
+            placeholder="Enter your email"
+            class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Phone Number</label>
+          <input
+            bind:value={customer.phone}
+            type="tel"
+            name="phone"
+            placeholder="Enter your phone number"
+            class="mt-1 w-full rounded-md border px-3 py-2 focus:border-black focus:ring-black"
+          />
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm">
+        <input
+          bind:value={customer.smsConsent}
+          type="checkbox"
+          name="smsConsent"
+          class="rounded border-gray-300"
+        />
+        Ok to receive SMS related to service
+        <span class="text-red-500">*</span>
+      </label>
+
+      <button
+        class="cursor-pointer rounded-md bg-black px-6 py-3 text-white text-sm font-medium hover:bg-gray-800 transition"
+      >
+        Continue →
+      </button>
+    </form>
+  {/if}
+
+  <!-- =======================
+    LIVE QUOTE SIDEBAR
+  ======================== -->
+
+  {#if step === 2}
+    <div class="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
+      <!-- FORM COLUMN -->
+
       <form
         method="POST"
-        action="?/createProperty"
+        action="?/finalizeBooking"
         class="max-w-4xl mx-auto px-4 py-10 space-y-10"
+        id="property-form"
       >
         <input type="hidden" name="clientId" value={clientId} />
+        <input type="hidden" name="customer" value={JSON.stringify(customer)} />
 
         <!-- Service Address -->
         <section class="space-y-4 relative">
@@ -508,6 +521,33 @@
           {/each}
         </section>
 
+        <!-- Date & Time Selection -->
+        <section class="space-y-4">
+          <h3 class="text-xl font-semibold">Preferred Cleaning Date & Time</h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Date</label>
+              <input
+                type="date"
+                bind:value={selectedDate}
+                name="preferredDate"
+                class="w-full rounded-md border px-3 py-2"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Time</label>
+              <input
+                type="time"
+                bind:value={selectedTime}
+                name="preferredTime"
+                class="w-full rounded-md border px-3 py-2"
+                required
+              />
+            </div>
+          </div>
+        </section>
+
         <!-- Notes -->
         <label class="block text-xl font-semibold mb-2">Notes</label>
         <textarea
@@ -515,106 +555,149 @@
           rows="4"
           class="w-full rounded-md border px-3 py-2"
         ></textarea>
+      </form>
+      <aside
+        class="w-80 sticky top-20 h-fit bg-gray-50 rounded-lg p-6 space-y-4"
+      >
+        <h2 class="text-2xl font-bold mb-4">Cleaning Plan</h2>
+        <hr />
+        {#if address.streetAddress}
+          <div class="mb-4">
+            <h2 class="text-lg font-semibold">Service Address</h2>
+            <p class="text-sm text-gray-700">
+              {address.streetAddress}{#if address.streetAddress && (address.city || address.state || address.zipcode)},
+              {/if}
+              {address.city}{#if address.city && (address.state || address.zipcode)},
+              {/if}
+              {address.state}
+              {address.zipcode}
+            </p>
+          </div>
+        {/if}
 
+        {#if selectedDate && selectedTime}
+          <div class="mb-4">
+            <h2 class="text-lg font-semibold">Date & Time</h2>
+            <span>
+              {(() => {
+                // Parse selectedDate as local
+                const [year, month, day] = selectedDate.split('-').map(Number);
+                const date = new Date(year, month - 1, day); // month is 0-indexed
+
+                // Ordinal suffix
+                const ordinal = (n) => {
+                  const s = ['th', 'st', 'nd', 'rd'],
+                    v = n % 100;
+                  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+                };
+
+                // 12hr time
+                const [h, m] = selectedTime.split(':');
+                let hour = Number(h);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                hour = hour % 12 || 12;
+
+                const monthName = date.toLocaleString('default', {
+                  month: 'short',
+                });
+
+                return `${monthName} ${ordinal(day)} at ${hour}:${m} ${ampm}`;
+              })()}
+            </span>
+          </div>
+        {/if}
+
+        <h2 class="text-lg font-semibold">Services/Add-Ons</h2>
+        <div class="space-y-2">
+          <div class="flex justify-between text-sm">
+            <span>Base Price ({property.sqft.toLocaleString()} sqft)</span>
+            <span>${quote.basePrice.toFixed(2)}</span>
+          </div>
+
+          <div class="flex justify-between text-sm">
+            <span>{bedroomLabel(property.bedrooms)}</span>
+          </div>
+
+          <div class="flex justify-between text-sm">
+            <span>{bathroomLabel(property.bathrooms)}</span>
+            <span>${quote.bathroomCharge.toFixed(2)}</span>
+          </div>
+
+          {#if showAccessFields && quote.accessFee > 0}
+            <div class="flex justify-between text-sm">
+              <span
+                >{PRICING.accessDifficulty[property.accessDifficulty]
+                  ?.label}</span
+              >
+              <span>${quote.accessFee.toFixed(2)}</span>
+            </div>
+          {/if}
+
+          {#each addOnKeys as key}
+            {#if addOns[key]}
+              <div class="flex justify-between text-sm">
+                <span>{PRICING.addOns[key].label}</span>
+                <span>${PRICING.addOns[key].price.toFixed(2)}</span>
+              </div>
+            {/if}
+          {/each}
+
+          {#each conditionKeys.filter((k) => k !== 'smokePestsMold') as key}
+            {#if conditions[key]}
+              <div class="flex justify-between text-sm">
+                <span>{PRICING.conditionFees[key].label}</span>
+                <span>${PRICING.conditionFees[key].price.toFixed(2)}</span>
+              </div>
+            {/if}
+          {/each}
+        </div>
+
+        <div class="border-t pt-4 space-y-2">
+          <div class="flex justify-between text-sm">
+            <span>Subtotal</span>
+            <span>${quote.subtotal.toFixed(2)}</span>
+          </div>
+
+          {#if quote.tax > 0}
+            <div class="flex justify-between text-sm">
+              <span>Tax ({(PRICING.taxRate * 100).toFixed(0)}%)</span>
+              <span>${quote.tax.toFixed(2)}</span>
+            </div>
+          {/if}
+        </div>
+
+        <div class="border-t pt-4">
+          <div class="flex justify-between font-bold text-lg">
+            <span>Total</span>
+            <span>${quote.total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        {#if schedule !== 'One-time'}
+          <div class="bg-green-50 border border-green-200 rounded-md p-3">
+            <div class="text-sm text-green-800 font-medium mb-1">
+              {schedule} Discount: {(quote.discount * 100).toFixed(0)}% off
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-green-700">Recurring Total:</span>
+              <span class="font-bold text-green-900"
+                >${quote.recurringTotal.toFixed(2)}</span
+              >
+            </div>
+            <p class="text-xs text-green-600 mt-1">
+              Applied from 2nd cleaning onwards
+            </p>
+          </div>
+        {/if}
         <button
-          class="cursor-pointer rounded-md bg-black px-6 py-3 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          type="submit"
+          form="property-form"
+          class="mt-6 w-full cursor-pointer rounded-md bg-black px-6 py-3 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={conditions.smokePestsMold}
         >
-          Submit Estimate Request
+          Submit
         </button>
-      </form>
-    {/if}
-  </div>
-
-  <!-- =======================
-    LIVE QUOTE SIDEBAR
-  ======================== -->
-  {#if step === 2}
-    <aside class="w-80 sticky top-20 h-fit bg-gray-50 rounded-lg p-6 space-y-4">
-      <h2 class="text-2xl font-bold mb-4">Cleaning Plan</h2>
-
-      <div class="space-y-2">
-        <div class="flex justify-between text-sm">
-          <span>Base Price ({property.sqft.toLocaleString()} sqft)</span>
-          <span>${quote.basePrice.toFixed(2)}</span>
-        </div>
-
-        <div class="flex justify-between text-sm">
-          <span>{bedroomLabel(property.bedrooms)}</span>
-        </div>
-
-        <div class="flex justify-between text-sm">
-          <span>{bathroomLabel(property.bathrooms)}</span>
-          <span>${quote.bathroomCharge.toFixed(2)}</span>
-        </div>
-
-        {#if showAccessFields && quote.accessFee > 0}
-          <div class="flex justify-between text-sm">
-            <span>
-              {Object.values(PRICING.accessDifficulty).find(
-                (o) => o.id === property.accessDifficulty,
-              )?.label}
-            </span>
-            <span>${quote.accessFee.toFixed(2)}</span>
-          </div>
-        {/if}
-
-        {#each addOnKeys as key}
-          {#if addOns[key]}
-            <div class="flex justify-between text-sm">
-              <span>{PRICING.addOns[key].label}</span>
-              <span>${PRICING.addOns[key].price.toFixed(2)}</span>
-            </div>
-          {/if}
-        {/each}
-
-        {#each conditionKeys.filter((k) => k !== 'smokePestsMold') as key}
-          {#if conditions[key]}
-            <div class="flex justify-between text-sm">
-              <span>{PRICING.conditionFees[key].label}</span>
-              <span>${PRICING.conditionFees[key].price.toFixed(2)}</span>
-            </div>
-          {/if}
-        {/each}
-      </div>
-
-      <div class="border-t pt-4 space-y-2">
-        <div class="flex justify-between text-sm">
-          <span>Subtotal</span>
-          <span>${quote.subtotal.toFixed(2)}</span>
-        </div>
-
-        {#if quote.tax > 0}
-          <div class="flex justify-between text-sm">
-            <span>Tax ({(PRICING.taxRate * 100).toFixed(0)}%)</span>
-            <span>${quote.tax.toFixed(2)}</span>
-          </div>
-        {/if}
-      </div>
-
-      <div class="border-t pt-4">
-        <div class="flex justify-between font-bold text-lg">
-          <span>Total</span>
-          <span>${quote.total.toFixed(2)}</span>
-        </div>
-      </div>
-
-      {#if schedule !== 'One-time'}
-        <div class="bg-green-50 border border-green-200 rounded-md p-3">
-          <div class="text-sm text-green-800 font-medium mb-1">
-            {schedule} Discount: {(quote.discount * 100).toFixed(0)}% off
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-green-700">Recurring Total:</span>
-            <span class="font-bold text-green-900"
-              >${quote.recurringTotal.toFixed(2)}</span
-            >
-          </div>
-          <p class="text-xs text-green-600 mt-1">
-            Applied from 2nd cleaning onwards
-          </p>
-        </div>
-      {/if}
-    </aside>
+      </aside>
+    </div>
   {/if}
 </div>
