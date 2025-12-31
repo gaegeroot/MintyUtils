@@ -1,5 +1,5 @@
 {
-  "name": "minty-admin",
+  "name": "mintyadmin",
   "main": ".svelte-kit/cloudflare/_worker.js",
   "compatibility_date": "2025-08-10",
   "compatibility_flags": ["nodejs_compat"],
