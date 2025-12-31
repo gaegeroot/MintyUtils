@@ -6,5 +6,7 @@
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"
-  }
+  },
+  "route": "admin.callminty.com/*",
+  "zone_id": "4efc57731705a52901ed4e6c22481435"
 }
