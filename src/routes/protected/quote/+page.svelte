@@ -24,8 +24,7 @@
     accessDifficulty: '4814194',
   };
 
-  let selectedDate = '';
-  let selectedTime = '';
+  let selectedDateTime = '';
 
   let addOns = {
     firstTimeClean: false,
@@ -269,6 +268,7 @@
       >
         <input type="hidden" name="clientId" value={clientId} />
         <input type="hidden" name="customer" value={JSON.stringify(customer)} />
+        <input type="hidden" name="quoteTotal" value={JSON.stringify(quote)} />
 
         <!-- Service Address -->
         <section class="space-y-4 relative">
@@ -528,19 +528,9 @@
             <div>
               <label class="block text-sm font-medium mb-1">Date</label>
               <input
-                type="date"
-                bind:value={selectedDate}
-                name="preferredDate"
-                class="w-full rounded-md border px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1">Time</label>
-              <input
-                type="time"
-                bind:value={selectedTime}
-                name="preferredTime"
+                type="datetime-local"
+                bind:value={selectedDateTime}
+                name="preferredDateTime"
                 class="w-full rounded-md border px-3 py-2"
                 required
               />
@@ -575,33 +565,34 @@
           </div>
         {/if}
 
-        {#if selectedDate && selectedTime}
+        {#if selectedDateTime}
           <div class="mb-4">
             <h2 class="text-lg font-semibold">Date & Time</h2>
             <span>
               {(() => {
-                // Parse selectedDate as local
-                const [year, month, day] = selectedDate.split('-').map(Number);
-                const date = new Date(year, month - 1, day); // month is 0-indexed
+                const [datePart, timePart] = selectedDateTime.split('T');
+                const [year, month, day] = datePart.split('-').map(Number);
+                let [hour, minute] = timePart.split(':').map(Number);
 
-                // Ordinal suffix
                 const ordinal = (n) => {
-                  const s = ['th', 'st', 'nd', 'rd'],
-                    v = n % 100;
+                  const s = ['th', 'st', 'nd', 'rd'];
+                  const v = n % 100;
                   return n + (s[(v - 20) % 10] || s[v] || s[0]);
                 };
 
-                // 12hr time
-                const [h, m] = selectedTime.split(':');
-                let hour = Number(h);
-                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const ampm = hour >= 12 ? 'pm' : 'am';
                 hour = hour % 12 || 12;
 
-                const monthName = date.toLocaleString('default', {
-                  month: 'short',
-                });
+                const monthName = new Date(year, month - 1, day).toLocaleString(
+                  'en-US',
+                  {
+                    month: 'short',
+                  },
+                );
 
-                return `${monthName} ${ordinal(day)} at ${hour}:${m} ${ampm}`;
+                return `${monthName} ${ordinal(day)} at ${hour}:${minute
+                  .toString()
+                  .padStart(2, '0')} ${ampm}`;
               })()}
             </span>
           </div>

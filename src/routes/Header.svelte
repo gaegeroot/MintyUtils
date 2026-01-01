@@ -12,8 +12,6 @@
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-    { href: '/protected', label: 'Protected' },
     { href: '/protected/quote', label: 'Quote' },
   ];
 </script>
