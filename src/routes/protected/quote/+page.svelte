@@ -5,7 +5,7 @@
   // =======================
   // STEP STATE
   // =======================
-  let step = 1;
+  let step = 2;
   let clientId = null;
 
   let customer = {

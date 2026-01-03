@@ -11,7 +11,7 @@ export const PRICING = {
         { max: 4500, price: 399, label: '4000-4499 sqft' },
         { max: 5000, price: 449, label: '4500-4999 sqft' },
         { max: 5500, price: 499, label: '5000-5499 sqft' },
-        { max: Infinity, price: 499, extraPerUnit: 50, extraUnitSize: 500, label: '5500+ sqft' }
+        { max: 9999999, price: 499, extraPerUnit: 50, extraUnitSize: 500, label: '5500+ sqft' }
     ],
     bathrooms: { fullBathPrice: 24, halfBathPrice: 12, firstIncluded: true },
     addOns: {
